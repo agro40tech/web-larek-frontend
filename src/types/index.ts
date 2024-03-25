@@ -11,86 +11,67 @@ export interface IViewConstructor {
 
 // Товар
 export type TProduct = {
+	id: string;
 	category: string;
-	name: string;
+	title: string;
 	image: string;
 	price: number;
 	description: string;
 };
 
-export interface IProductView extends IView {
-	uiCategory: HTMLSpanElement;
-	uiName: HTMLHeadingElement;
-	uiImage: HTMLImageElement;
-	uiPrice: HTMLSpanElement;
-	uiDescription: HTMLParagraphElement;
-	uiAddToBusketButton: HTMLButtonElement;
-}
-
 // Каталог товаров
 export interface ICatalogModel {
-	// <key, Product>
-	items: Map<string, TProduct>;
-
 	setItems: (items: TProduct[]) => void;
 	getItem: (id: string) => TProduct;
 }
 
-export interface ICatalogItemView extends IView {
-	uiCategory: HTMLSpanElement;
-	uiName: HTMLHeadingElement;
-	uiImage: HTMLImageElement;
-	uiPrice: HTMLSpanElement;
-	uiAddToBasketButton: HTMLButtonElement;
-}
-
 // Корзина товаров
 export interface IBasketModel {
-	// <key, countProduct>
-	items: Map<string, number>;
-
 	removeItem: (id: string) => void;
 	addItem: (id: string) => void;
-	changed: () => void;
+	clear: () => void;
+	incrementTotalPrice: (totalPriceProduct: number) => void;
+	getTotalPrice: () => number;
+	clearTotalPrice: () => void;
+	getIds: () => string[];
 }
 
-export interface IBasketItemView extends IView {
-	uiTotalCount: HTMLSpanElement;
-	uiTitle: HTMLSpanElement;
-	uiTotalPrice: HTMLSpanElement;
-	uiRemoveButton: HTMLButtonElement;
-	id: string;
+export interface IBasketView extends IView {
+	getContainer: () => HTMLElement;
+	getTotalPrice: () => number;
 }
 
 // Данные пользователя
-export enum EPaymentType {
-	online = 'ONLINE',
-	onReceipt = 'ON_RECEIP',
-}
-
-export interface IDataUserModel {
-	paymentMethod: EPaymentType;
-	deliveryAddress: string;
+export type TUserDataObject = {
+	address: string;
 	email: string;
+	paymentMethod: string;
 	phoneNumber: string;
+};
 
-	setPayment: (method: EPaymentType) => this;
+export interface IUserDataModel {
+	setPayment: (method: string) => this;
 	setAddress: (address: string) => this;
 	setEmail: (email: string) => this;
 	setPhoneNumber: (number: string) => this;
+	getUserData: () => TUserDataObject;
 }
 
-export interface IDataUserOrderView extends IView {
-	uiPaymentMethod: HTMLButtonElement[];
-	uiDeliveryAddress: HTMLInputElement;
+export interface IPageView {
+	setCounter: (value: number) => void;
+	lockPage: (value: boolean) => void;
 }
 
-export interface IDataUserContactsView extends IView {
-	uiEmail: HTMLInputElement;
-	uiPhoneNumber: HTMLInputElement;
+export interface IModalView extends IView {
+	close: () => void;
 }
 
-// Уведомление об успешном заказе
-export interface ISuccessOrderView extends IView {
-	uiDescription: HTMLParagraphElement;
+type TResponseProductList = {
+	items: TProduct[];
+	total: number;
+};
+
+export interface IAuctionApi {
+	getProductList: () => Promise<TResponseProductList>;
+	sendOrder: (data: { userData: TUserDataObject; itemsId: string[] }) => void;
 }
