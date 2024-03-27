@@ -38,7 +38,6 @@ export interface IBasketModel {
 
 export interface IBasketView extends IView {
 	getContainer: () => HTMLElement;
-	getTotalPrice: () => number;
 }
 
 // Данные пользователя
@@ -66,7 +65,7 @@ export interface IModalView extends IView {
 	close: () => void;
 }
 
-type TResponseProductList = {
+export type TResponseProductList = {
 	items: TProduct[];
 	total: number;
 };
@@ -74,4 +73,31 @@ type TResponseProductList = {
 export interface IAuctionApi {
 	getProductList: () => Promise<TResponseProductList>;
 	sendOrder: (data: { userData: TUserDataObject; itemsId: string[] }) => void;
+}
+
+export interface IForm {
+	valid: boolean;
+	errors: string;
+	validate: (value: string) => boolean;
+}
+
+export type ApiPostMethods = 'POST' | 'PUT' | 'DELETE';
+
+export interface IApi {
+	readonly baseUrl: string;
+	get: (uri: string) => Promise<object>;
+	post: (uri: string, data: object, method: ApiPostMethods) => Promise<object>;
+}
+
+export interface IComponent {
+	toggleClass: (
+		element: HTMLElement,
+		className: string,
+		force?: boolean
+	) => void;
+	setDisabled: (element: HTMLElement, state: boolean) => void;
+}
+
+export interface IModel {
+	emitChanges: (event: string, payload?: object) => void;
 }
