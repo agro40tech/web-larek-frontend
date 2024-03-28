@@ -1,13 +1,12 @@
-import { IEvents } from '../components/base/events';
-
 // Базовые интерфейсы
 export interface IView {
 	render: (data: object) => HTMLElement;
 }
 
-export interface IViewConstructor {
-	new (container: HTMLElement, events?: IEvents): IView;
-}
+export type TResponseProductList = {
+	items: TProduct[];
+	total: number;
+};
 
 // Товар
 export type TProduct = {
@@ -21,7 +20,7 @@ export type TProduct = {
 
 // Каталог товаров
 export interface ICatalogModel {
-	setItems: (items: TProduct[]) => void;
+	setItems: (data: TResponseProductList) => void;
 	getItem: (id: string) => TProduct;
 }
 
@@ -65,11 +64,6 @@ export interface IModalView extends IView {
 	close: () => void;
 }
 
-export type TResponseProductList = {
-	items: TProduct[];
-	total: number;
-};
-
 export interface IAuctionApi {
 	getProductList: () => Promise<TResponseProductList>;
 	sendOrder: (data: { userData: TUserDataObject; itemsId: string[] }) => void;
@@ -78,7 +72,7 @@ export interface IAuctionApi {
 export interface IForm {
 	valid: boolean;
 	errors: string;
-	validate: (value: string) => boolean;
+	dataSubmit: object;
 }
 
 export type ApiPostMethods = 'POST' | 'PUT' | 'DELETE';
