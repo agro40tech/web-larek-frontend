@@ -125,26 +125,30 @@ class ProductView extends Component implements IView {
 		});
 	}
 
-	public render = (data: TProduct) => {
-		// Если уже этот товар рендерили возвращаем его
-		if (data.id === this._id) return this.container;
-
+	public render = (data: { item: TProduct; inBasket?: boolean }) => {
 		// Вносим данные в ui элементы
-		this.setText(this._uiCategory, data.category);
-		this.setText(this._uiName, data.title);
-		this.setText(this._uiDescription, data.description);
+		this.setText(this._uiCategory, data.item.category);
+		this.setText(this._uiName, data.item.title);
+		this.setText(this._uiDescription, data.item.description);
 
-		const altImage = `Изображение товара ${data.title}`;
-		this.setImage(this._uiImage, data.image, altImage);
+		const altImage = `Изображение товара ${data.item.title}`;
+		this.setImage(this._uiImage, data.item.image, altImage);
 
-		if (data.price !== null) {
-			const priceText = `${data.price.toString()} синапсов`;
+		if (!data.inBasket && data.item.price !== null) {
+			this.setDisabled(this._uiAddToBasketButton, false);
+			this.setText(this._uiAddToBasketButton, 'В корзину');
+			const priceText = `${data.item.price.toString()} синапсов`;
 			this.setText(this._uiPrice, priceText);
-		} else {
+		} else if (data.inBasket) {
+			this.setDisabled(this._uiAddToBasketButton, true);
+			this.setText(this._uiAddToBasketButton, 'Уже в корзине');
+		} else if (data.item.price === null) {
 			this.setText(this._uiPrice, 'Бесценно');
+			this.setDisabled(this._uiAddToBasketButton, true);
+			this.setText(this._uiAddToBasketButton, 'Нельзя купить');
 		}
 
-		this._id = data.id;
+		this._id = data.item.id;
 
 		return this.container;
 	};

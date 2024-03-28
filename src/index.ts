@@ -124,8 +124,21 @@ events.on('order:open', () => {
 
 // Открыли модальное окно превью карточки каталога
 events.on('cardPreview:open', (event: { data: TProduct }) => {
+	catalogModel.getItem(event.data.id);
+	const basketProducts = basketModel.getIds();
+
+	let inBasket;
+
+	if (basketProducts.includes(event.data.id)) {
+		inBasket = true;
+	} else {
+		inBasket = false;
+	}
+
 	pageView.lockPage(true);
-	modalView.render(productView.render(event.data));
+	modalView.render(
+		productView.render({ item: event.data, inBasket: inBasket })
+	);
 });
 
 // Подтвердили форму оформления заказа
