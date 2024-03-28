@@ -13,12 +13,6 @@ class ModalView extends Component implements IModalView {
 		this._uiCloseButton = container.querySelector('.modal__close');
 		this._childContainer = container.querySelector('.modal__content');
 
-		container.addEventListener('click', (e: MouseEvent) => {
-			if (!this._childContainer.contains(e.target as Node)) {
-				events.emit('modal:close');
-			}
-		});
-
 		this._uiCloseButton.addEventListener('click', () =>
 			events.emit('modal:close')
 		);
