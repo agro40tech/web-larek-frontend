@@ -1,7 +1,7 @@
-import { TProduct } from './types';
+import type { TProduct } from './types';
 import PageView from './components/PageView';
-import ModalView from './components/ModalView';
 import AuctionApi from './components/AuctionApi';
+import ModalView from './components/common/Modal';
 import SuccessView from './components/SuccessView';
 import { API_URL, CDN_URL } from './utils/constants';
 import { EventEmitter } from './components/base/events';
@@ -36,12 +36,13 @@ const successTemplate = ensureElement<HTMLTemplateElement>('#success');
 
 // Инициализация контейнеров
 const galleryContainer = ensureElement<HTMLDivElement>('.gallery');
+const pageWrapper = ensureElement<HTMLDivElement>('.page__wrapper');
 const modalContainer = ensureElement<HTMLDivElement>('#modal-container');
 
 // Инициализация моделей
-const basketModel = new BasketModel(events);
-const catalogModel = new CatalogModel(events);
-const userDataModel = new UserDataModel(events);
+const basketModel = new BasketModel({}, events);
+const catalogModel = new CatalogModel({}, events);
+const userDataModel = new UserDataModel({}, events);
 
 // Инициализация представителей
 const modalView = new ModalView(modalContainer, events);
@@ -49,7 +50,7 @@ const productView = new ProductView(cloneTemplate(cardPreviewTemplate), events);
 const basketView = new BasketView(cloneTemplate(basketTemplate), events);
 const catalogView = new CatalogView(galleryContainer);
 const orderFormView = new OrderFormView(cloneTemplate(orderTemplate), events);
-const pageView = new PageView(events);
+const pageView = new PageView(pageWrapper, events);
 const successView = new SuccessView(cloneTemplate(successTemplate), events);
 const contactsFormView = new ContactsFormView(
 	cloneTemplate(contactsTemplate),
@@ -100,45 +101,52 @@ const renderBasket = (data: (string | number)[][]) => {
 
 // Инициализация каталога товаров
 events.on('catalog:init', (event: { items: TProduct[] }) => {
-	catalogView.render(
-		event.items.map((item) =>
-			new CatalogItemView(cloneTemplate(cardCatalogTemplate), events).render(
-				item
-			)
-		)
-	);
+	catalogView.render({
+		items: event.items.map((item) => {
+			return new CatalogItemView(
+				cloneTemplate(cardCatalogTemplate),
+				events
+			).render({
+				category: item.category,
+				description: item.description,
+				id: item.id,
+				image: item.image,
+				price: item.price,
+				title: item.title,
+			});
+		}),
+	});
+});
+
+// Открыли модальное окно
+events.on('modal:open', () => {
+	pageView.lockPage(true);
 });
 
 // Открыли модальное окно корзины товаров
 events.on('busket:open', () => {
-	pageView.lockPage(true);
-	const container = basketView.getContainer();
-	modalView.render(container);
+	modalView.render({
+		content: basketView.render({}),
+	});
 });
 
 // Открыли модальное окно оформления заказа
 events.on('order:open', () => {
-	pageView.lockPage(true);
-	modalView.render(orderFormView.render());
+	modalView.render({
+		content: orderFormView.render({}),
+	});
 });
 
 // Открыли модальное окно превью карточки каталога
 events.on('cardPreview:open', (event: { data: TProduct }) => {
 	catalogModel.getItem(event.data.id);
-	const basketProducts = basketModel.getIds();
 
-	let inBasket;
-
-	if (basketProducts.includes(event.data.id)) {
-		inBasket = true;
-	} else {
-		inBasket = false;
-	}
-
-	pageView.lockPage(true);
-	modalView.render(
-		productView.render({ item: event.data, inBasket: inBasket })
-	);
+	modalView.render({
+		content: productView.render({
+			product: event.data,
+			inBasket: basketModel.inBusket(event.data.id),
+		}),
+	});
 });
 
 // Подтвердили форму оформления заказа
@@ -147,8 +155,9 @@ events.on(
 	(event: { data: { address: string; payment: string } }) => {
 		userDataModel.setAddress(event.data.address).setPayment(event.data.payment);
 
-		modalView.close();
-		modalView.render(contactsFormView.render());
+		modalView.render({
+			content: contactsFormView.render({}),
+		});
 	}
 );
 
@@ -169,16 +178,18 @@ events.on(
 				total: basketModel.getTotalPrice(),
 				items: basketModel.getIds(),
 			})
+			.then((data) => {
+				modalView.render({
+					content: successView.render({
+						totalPrice: data.total,
+					}),
+				});
+
+				basketModel.clear();
+			})
 			.catch((err) => {
 				console.error(err);
 			});
-
-		modalView.close();
-		modalView.render(
-			successView.render({ totalPrice: basketModel.getTotalPrice() })
-		);
-
-		basketModel.clear();
 	}
 );
 
@@ -203,8 +214,17 @@ events.on('busket:changed', (event: { data: (string | number)[][] }) => {
 
 // Закрыли модальное окно
 events.on('modal:close', () => {
-	modalView.close();
 	pageView.lockPage(false);
+});
+
+// Закрыли окно успешной оплаты
+events.on('success:close', () => {
+	modalView.close();
+});
+
+// Закрыли превью товара
+events.on('productView:close', () => {
+	modalView.close();
 });
 
 // Запрос католога
@@ -213,6 +233,4 @@ api
 	.then((data) => {
 		catalogModel.setItems(data);
 	})
-	.catch((err) => {
-		console.error(err);
-	});
+	.catch(console.error);

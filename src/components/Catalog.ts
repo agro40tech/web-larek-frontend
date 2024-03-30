@@ -2,18 +2,21 @@ import { Model } from './base/model';
 import Component from './base/component';
 import type { IEvents } from './base/events';
 import type {
+	ICatalogItemView,
 	ICatalogModel,
-	IView,
+	IProductView,
 	TProduct,
+	TProductViewRenderProps,
 	TResponseProductList,
 } from '../types';
 
 // Модель каталога карточек
-class CatalogModel extends Model implements ICatalogModel {
+// eslint-disable-next-line
+class CatalogModel extends Model<{}> implements ICatalogModel {
 	protected _items: Map<string, TProduct> = new Map();
 
-	constructor(protected events: IEvents) {
-		super(events);
+	constructor(protected data: object, protected events: IEvents) {
+		super(data, events);
 	}
 
 	// Ищет товар по id, в случае если поиск успешен возвращает этот товар.
@@ -36,7 +39,7 @@ class CatalogModel extends Model implements ICatalogModel {
 }
 
 // Представление карточки товара в катологе
-class CatalogItemView extends Component implements IView {
+class CatalogItemView extends Component<TProduct> implements ICatalogItemView {
 	protected _dataProduct: TProduct;
 	protected _uiCategory: HTMLSpanElement;
 	protected _uiImage: HTMLImageElement;
@@ -47,7 +50,7 @@ class CatalogItemView extends Component implements IView {
 		protected container: HTMLButtonElement,
 		protected events: IEvents
 	) {
-		super();
+		super(container);
 
 		// Получаем ui элементы из контейнера
 		this._uiCategory = container.querySelector('.card__category');
@@ -63,42 +66,53 @@ class CatalogItemView extends Component implements IView {
 		);
 	}
 
-	public render = (data: TProduct): HTMLButtonElement => {
-		// Устанавливаем данные товара в ui элементы
-		this.setText(this._uiCategory, data.category);
-		this.setText(this._uiName, data.title);
+	set title(value: string) {
+		this.setText(this._uiName, value);
+	}
 
-		const altImage = `Изображение товара ${data.title}`;
-		this.setImage(this._uiImage, data.image, altImage);
+	set category(value: string) {
+		this.setText(this._uiCategory, value);
+	}
 
-		this._dataProduct = data;
+	set image(value: string) {
+		const altImage = `Изображение товара ${this.title}`;
+		this.setImage(this._uiImage, value, altImage);
+	}
 
-		if (data.price !== null) {
-			const priceText = `${data.price.toString()} синапсов`;
+	set price(value: number) {
+		if (value !== null) {
+			const priceText = `${value.toString()} синапсов`;
 			this.setText(this._uiPrice, priceText);
 		} else {
 			this.setText(this._uiPrice, 'Бесценно');
 		}
+	}
+
+	public render = (data: TProduct): HTMLButtonElement => {
+		super.render(data);
+
+		this._dataProduct = data;
 
 		return this.container;
 	};
 }
 
 // Представление каталога
-class CatalogView extends Component implements IView {
+class CatalogView extends Component<{ items: HTMLButtonElement[] }> {
 	constructor(protected container: HTMLElement) {
-		super();
+		super(container);
 	}
 
-	public render = (items: HTMLElement[]): HTMLElement => {
-		this.container.replaceChildren(...items);
-
-		return this.container;
-	};
+	set items(value: HTMLButtonElement[]) {
+		this.container.replaceChildren(...value);
+	}
 }
 
 // Представление товара в модальном окне
-class ProductView extends Component implements IView {
+class ProductView
+	extends Component<TProductViewRenderProps>
+	implements IProductView
+{
 	protected _uiAddToBasketButton: HTMLButtonElement;
 	protected _uiCategory: HTMLSpanElement;
 	protected _uiDescription: HTMLParagraphElement;
@@ -109,7 +123,7 @@ class ProductView extends Component implements IView {
 	protected _id: string;
 
 	constructor(protected container: HTMLElement, protected events: IEvents) {
-		super();
+		super(container);
 
 		// Получаем ui элементы из контейнера
 		this._uiAddToBasketButton = container.querySelector('.button');
@@ -121,34 +135,42 @@ class ProductView extends Component implements IView {
 
 		this._uiAddToBasketButton.addEventListener('click', () => {
 			events.emit('busket:add', { id: this._id });
-			events.emit('modal:close');
+			events.emit('productView:close');
 		});
 	}
 
-	public render = (data: { item: TProduct; inBasket?: boolean }) => {
-		// Вносим данные в ui элементы
-		this.setText(this._uiCategory, data.item.category);
-		this.setText(this._uiName, data.item.title);
-		this.setText(this._uiDescription, data.item.description);
+	set product(product: TProduct) {
+		this.setText(this._uiName, product.title);
+		this.setText(this._uiCategory, product.category);
+		this.setText(this._uiDescription, product.description);
+		this.setText(this._uiAddToBasketButton, 'В корзину');
 
-		const altImage = `Изображение товара ${data.item.title}`;
-		this.setImage(this._uiImage, data.item.image, altImage);
+		this.setDisabled(this._uiAddToBasketButton, false);
 
-		if (!data.inBasket && data.item.price !== null) {
-			this.setDisabled(this._uiAddToBasketButton, false);
-			this.setText(this._uiAddToBasketButton, 'В корзину');
-			const priceText = `${data.item.price.toString()} синапсов`;
+		const altImage = `Изображение товара ${product.title}`;
+		this.setImage(this._uiImage, product.image, altImage);
+
+		if (product.price !== null) {
+			const priceText = `${product.price.toString()} синапсов`;
 			this.setText(this._uiPrice, priceText);
-		} else if (data.inBasket) {
+		} else {
+			this.setText(this._uiPrice, 'Бесценно');
+			this.setText(this._uiAddToBasketButton, 'Нельзя купить');
+			this.setDisabled(this._uiAddToBasketButton, true);
+		}
+	}
+
+	set inBasket(value: boolean) {
+		if (value) {
 			this.setDisabled(this._uiAddToBasketButton, true);
 			this.setText(this._uiAddToBasketButton, 'Уже в корзине');
-		} else if (data.item.price === null) {
-			this.setText(this._uiPrice, 'Бесценно');
-			this.setDisabled(this._uiAddToBasketButton, true);
-			this.setText(this._uiAddToBasketButton, 'Нельзя купить');
 		}
+	}
 
-		this._id = data.item.id;
+	public render = (data: TProductViewRenderProps) => {
+		super.render(data);
+
+		this._id = data.product.id;
 
 		return this.container;
 	};

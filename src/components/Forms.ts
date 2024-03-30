@@ -1,17 +1,18 @@
 import { Form } from './common/Form';
 import { Model } from './base/model';
 import type { IEvents } from './base/events';
-import type { IUserDataModel, IView } from '../types';
+import type { IUserDataModel } from '../types';
 
 // Модель данных пользователя
-class UserDataModel extends Model implements IUserDataModel {
+// eslint-disable-next-line
+class UserDataModel extends Model<{}> implements IUserDataModel {
 	protected _address: string;
 	protected _email: string;
 	protected _paymentMethod: string;
 	protected _phoneNumber: string;
 
-	constructor(events: IEvents) {
-		super(events);
+	constructor(protected data: object, events: IEvents) {
+		super(data, events);
 	}
 
 	public setAddress = (address: string) => {
@@ -46,7 +47,7 @@ class UserDataModel extends Model implements IUserDataModel {
 }
 
 // Представление формы оформления заказа
-class OrderFormView extends Form implements IView {
+class OrderFormView extends Form {
 	protected _uiPaymentButtons: HTMLButtonElement[];
 	protected _uiFormInput: HTMLInputElement;
 
@@ -110,14 +111,10 @@ class OrderFormView extends Form implements IView {
 			this.errors = 'Все поля должны быть заполнены!';
 		}
 	};
-
-	public render() {
-		return this.container;
-	}
 }
 
 // Представление формы контактов
-class ContactsFormView extends Form implements IView {
+class ContactsFormView extends Form {
 	protected _uiEmailInput: HTMLInputElement;
 	protected _uiPhoneNumberInput: HTMLInputElement;
 
@@ -197,10 +194,6 @@ class ContactsFormView extends Form implements IView {
 			this.valid = false;
 		}
 	};
-
-	public render() {
-		return this.container;
-	}
 }
 
 export { OrderFormView, ContactsFormView, UserDataModel };

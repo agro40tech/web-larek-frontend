@@ -1,15 +1,23 @@
 import { Model } from './base/model';
 import Component from './base/component';
 import type { IEvents } from './base/events';
-import type { IBasketModel, IBasketView, IView, TProduct } from '../types';
+import type {
+	IBasketItemView,
+	IBasketModel,
+	IBasketView,
+	TBasketItemRenderProps,
+	TBasketRenderProps,
+	TProduct,
+} from '../types';
 
 // Модель корзины
-class BasketModel extends Model implements IBasketModel {
+// eslint-disable-next-line
+class BasketModel extends Model<{}> implements IBasketModel {
 	protected _items: Map<string, number> = new Map();
 	protected _totalPrice = 0;
 
-	constructor(protected events: IEvents) {
-		super(events);
+	constructor(protected data: object, protected events: IEvents) {
+		super(data, events);
 	}
 
 	// Добавляет товар в корзину
@@ -76,6 +84,15 @@ class BasketModel extends Model implements IBasketModel {
 		return resultArr;
 	};
 
+	// Проверяет на наличие в корзине
+	public inBusket = (id: string): boolean => {
+		if (Array.from(this._items.keys()).includes(id)) {
+			return true;
+		}
+
+		return false;
+	};
+
 	// Создает событие и отправляет коллекцию товаров
 	protected _changed = (): void => {
 		this.emitChanges('busket:changed', {
@@ -85,7 +102,10 @@ class BasketModel extends Model implements IBasketModel {
 }
 
 // Карточка товара в корзине
-class BasketItemView extends Component implements IView {
+class BasketItemView
+	extends Component<TBasketItemRenderProps>
+	implements IBasketItemView
+{
 	protected _uiTotalPrice: HTMLSpanElement;
 	protected _uiTotalCount: HTMLSpanElement;
 	protected _uiTitle: HTMLSpanElement;
@@ -94,7 +114,7 @@ class BasketItemView extends Component implements IView {
 	protected _id: string;
 
 	constructor(protected container: HTMLElement, protected events: IEvents) {
-		super();
+		super(container);
 
 		// Получаем ui элементы из контейнера
 		this._uiRemoveButton = container.querySelector('.basket__item-delete');
@@ -108,20 +128,25 @@ class BasketItemView extends Component implements IView {
 		);
 	}
 
-	public render = (data: {
-		product: TProduct;
-		totalCount: number;
-		totalPrice: number;
-	}): HTMLElement => {
+	set product(value: TProduct) {
+		this.setText(this._uiTitle, value.title);
+	}
+
+	set totalCount(value: number) {
+		this.setText(this._uiTotalCount, value);
+	}
+
+	set totalPrice(value: number) {
+		this.setText(this._uiTotalPrice, `${value.toString()} синапсов`);
+	}
+
+	public render = (data: TBasketItemRenderProps): HTMLElement => {
 		// Если предыдущий id уже был отрендерин то возвращаем текущий контейнер
 		if (data.product.id === this._id) {
 			return this.container;
 		}
 
-		// Устанавливаем данные товара в ui элементы
-		this.setText(this._uiTotalPrice, `${data.totalPrice.toString()} синапсов`);
-		this.setText(this._uiTotalCount, data.totalCount);
-		this.setText(this._uiTitle, data.product.title);
+		super.render(data);
 
 		this._id = data.product.id;
 
@@ -130,46 +155,39 @@ class BasketItemView extends Component implements IView {
 }
 
 // Представление корзины
-class BasketView extends Component implements IBasketView {
+class BasketView extends Component<TBasketRenderProps> implements IBasketView {
 	protected _uiChildContainer: HTMLUListElement;
 	protected _uiOrderButton: HTMLButtonElement;
 	protected _uiTotalPrice: HTMLSpanElement;
 
 	constructor(protected container: HTMLElement, protected events: IEvents) {
-		super();
+		super(container);
 
 		this._uiChildContainer = container.querySelector('.basket__list');
 		this._uiOrderButton = container.querySelector('.basket__button');
 		this._uiTotalPrice = container.querySelector('.basket__price');
 
 		this._uiOrderButton.addEventListener('click', () => {
-			events.emit('modal:close');
 			events.emit('order:open');
 		});
 
 		this.setDisabled(this._uiOrderButton, true);
 	}
 
-	// Возвращает контейнер
-	public getContainer(): HTMLElement {
-		return this.container;
+	set items(items: HTMLElement[]) {
+		this._uiChildContainer.replaceChildren(...items);
 	}
 
-	public render = (data: { items: HTMLElement[]; totalPrice: number }) => {
-		// Монтируем пункты корзины
-		this._uiChildContainer.replaceChildren(...data.items);
-
-		const priceText = `${data.totalPrice} синапсов`;
+	set totalPrice(value: number) {
+		const priceText = `${value} синапсов`;
 		this.setText(this._uiTotalPrice, priceText);
 
-		if (data.totalPrice === 0) {
+		if (value === 0) {
 			this.setDisabled(this._uiOrderButton, true);
 		} else {
 			this.setDisabled(this._uiOrderButton, false);
 		}
-
-		return this.container;
-	};
+	}
 }
 
 export { BasketModel, BasketItemView, BasketView };

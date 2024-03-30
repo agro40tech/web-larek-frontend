@@ -3,14 +3,15 @@ import type { IPageView } from '../types';
 import type { IEvents } from './base/events';
 import { ensureElement } from '../utils/utils';
 
-class PageView extends Component implements IPageView {
+// eslint-disable-next-line
+class PageView extends Component<{}> implements IPageView {
 	protected _uiBasketButton: HTMLButtonElement;
 	protected _uiCatalog: HTMLElement;
 	protected _uiCounter: HTMLSpanElement;
 	protected _uiWrapper: HTMLElement;
 
-	constructor(protected events: IEvents) {
-		super();
+	constructor(protected container: HTMLElement, protected events: IEvents) {
+		super(container);
 
 		this._uiBasketButton = ensureElement<HTMLButtonElement>('.header__basket');
 		this._uiCatalog = ensureElement<HTMLElement>('.gallery');
@@ -29,11 +30,7 @@ class PageView extends Component implements IPageView {
 
 	// Блокирует прокрутку страницы
 	public lockPage(value: boolean) {
-		if (value) {
-			this.toggleClass(this._uiWrapper, 'page__wrapper_locked', true);
-		} else {
-			this.toggleClass(this._uiWrapper, 'page__wrapper_locked', false);
-		}
+		this.toggleClass(this._uiWrapper, 'page__wrapper_locked', value);
 	}
 }
 

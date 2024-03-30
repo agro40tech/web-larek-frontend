@@ -1,15 +1,16 @@
 import type { IForm } from '../../types';
-import type { IEvents } from '../base/events';
 import Component from '../base/component';
+import type { IEvents } from '../base/events';
 import { ensureElement } from '../../utils/utils';
 
-export class Form extends Component implements IForm {
+// eslint-disable-next-line
+export class Form extends Component<{}> implements IForm {
 	protected _submit: HTMLButtonElement;
 	protected _errors: HTMLElement;
 	protected _dataSubmit: object;
 
 	constructor(protected container: HTMLFormElement, protected events: IEvents) {
-		super();
+		super(container);
 
 		this._submit = ensureElement<HTMLButtonElement>(
 			'button[type=submit]',

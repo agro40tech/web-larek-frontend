@@ -1,13 +1,16 @@
-import { IView } from '../types';
-import Component from './base/component';
+import { ISuccessView } from '../types';
 import { IEvents } from './base/events';
+import Component from './base/component';
 
-class SuccessView extends Component implements IView {
+class SuccessView
+	extends Component<{ totalPrice: number }>
+	implements ISuccessView
+{
 	protected _uiSuccessButton: HTMLButtonElement;
 	protected _uiSuccessDescription: HTMLSpanElement;
 
 	constructor(protected container: HTMLElement, events: IEvents) {
-		super();
+		super(container);
 
 		this._uiSuccessButton = container.querySelector('.order-success__close');
 		this._uiSuccessDescription = container.querySelector(
@@ -15,15 +18,13 @@ class SuccessView extends Component implements IView {
 		);
 
 		this._uiSuccessButton.addEventListener('click', () => {
-			events.emit('modal:close');
+			events.emit('success:close');
 		});
 	}
 
-	render(data: { totalPrice: number }) {
-		const totalPirceText = `Списано ${data.totalPrice} синапсов`;
+	set totalPrice(value: number) {
+		const totalPirceText = `Списано ${value} синапсов`;
 		this.setText(this._uiSuccessDescription, totalPirceText);
-
-		return this.container;
 	}
 }
 
