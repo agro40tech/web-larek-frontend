@@ -85,7 +85,7 @@ class BasketModel extends Model<{}> implements IBasketModel {
 	};
 
 	// Проверяет на наличие в корзине
-	public inBusket = (id: string): boolean => {
+	public inBasket = (id: string): boolean => {
 		if (Array.from(this._items.keys()).includes(id)) {
 			return true;
 		}

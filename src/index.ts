@@ -144,7 +144,7 @@ events.on('cardPreview:open', (event: { data: TProduct }) => {
 	modalView.render({
 		content: productView.render({
 			product: event.data,
-			inBasket: basketModel.inBusket(event.data.id),
+			inBasket: basketModel.inBasket(event.data.id),
 		}),
 	});
 });

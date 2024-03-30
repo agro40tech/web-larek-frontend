@@ -106,7 +106,7 @@ export interface IBasketModel {
 	getTotalPrice: () => number;
 	clearTotalPrice: () => void;
 	getIds: () => string[];
-	inBusket: (id: string) => boolean;
+	inBasket: (id: string) => boolean;
 }
 
 // Представитель товара в корзине
